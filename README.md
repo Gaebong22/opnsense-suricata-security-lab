@@ -4,14 +4,14 @@
 > OPNsense를 활용해 접근 정책과 네트워크 경로를 구성하고, 실제 패킷·방화벽 로그·Suricata 이벤트로 동작을 검증한 개인 보안 실습입니다.
 
 
-### 증적 바로가기
+## 주요 성과 및 증적
 
 - [SSH 접근 장애: Default deny 로그](evidence/ssh/default-deny-redacted.png) · [Alias 로드 상태](evidence/ssh/alias-loaded-zero-redacted.png)
 - [ICMP 방화벽 차단 Live View](evidence/firewall/icmp-block-liveview.png) · [방화벽 규칙 화면](evidence/firewall/rules-before-apply.png)
 - [Source NAT: LAN 패킷](evidence/nat/lan-icmp.txt) · [WAN 패킷](evidence/nat/wan-icmp.txt)
-- [Suricata 사용자 규칙](configs/local.rules) · [선택 필드 JSONL 로그](evidence/suricata/icmp-alerts-selected-fields.jsonl)
+- [Suricata 사용자 규칙](configs/local.rules) · [JSONL 이벤트 정리본](evidence/suricata/icmp-alerts-selected-fields.jsonl)
 
-> 본 저장소의 `.txt` 및 JSONL 증적은 대화 중 사용자에게 제공된 실제 터미널 출력을 옮겨 담은 자료입니다. 서버에서 원본 파일을 직접 복사한 바이트 단위 원본이 아니며, JSONL은 원본 `eve.json`에서 `jq`로 **선택된 필드만 출력한 4건**입니다. 스크린샷은 실제 캡처를 사용하고 공개에 불필요한 주소/계정 영역을 마스킹했습니다.
+실습 화면과 패킷·이벤트 로그는 항목별 증적 파일로 정리했습니다. 파일별 수집·정리 형태는 [증적 안내](docs/EVIDENCE_INDEX.md)에서 확인할 수 있습니다.
 
 ## 1. 프로젝트 개요
 
@@ -28,9 +28,9 @@
 | 방화벽 정책 | LAN ICMP 허용·차단 규칙 시험 | 허용 시 Ping 4/4, 차단 시 Live View 로그 3건 |
 | Source NAT | 지정 목적지에 대한 정적 호스트 경로 및 자동 SNAT | LAN/WAN 양쪽에서 출발지 IP 변환 확인, Ping 4/4 |
 | IDS 탐지 | Suricata 8.0.8, AF_PACKET, 로컬 ICMP 탐지 규칙 | ICMP 요청 4회에 대응하는 Alert 4건 |
-| 이벤트 분석 | `fast.log`, `eve.json`, `jq` | 동일한 4개 이벤트 대조 및 JSONL 증적 저장 |
+| 이벤트 분석 | `fast.log`, `eve.json`, `jq` | 동일한 4개 탐지 이벤트 대조 |
 
-> **범위:** 실습 환경에서 확인한 결과입니다. OPNsense 자체의 인라인 IPS, 네트워크 전체 패킷 미러링, 상용망 운영·성능 검증을 수행한 프로젝트는 아닙니다.
+이번 실습에서는 OPNsense 방화벽의 정책 적용·NAT와 Ubuntu 호스트에서 구동한 Suricata의 IDS 탐지 기능을 각각 시험했습니다.
 
 ---
 
@@ -119,7 +119,7 @@ root
 4. Alias 화면에서 `MACBOOK_TS`의 **`Loaded# = 0`**을 확인해, Alias 로드/규칙 매칭 문제를 주요 조사 대상으로 삼았습니다.
 5. Alias 및 방화벽 정책을 재적용한 후 MacBook에서 **SSH 공개키 접속에 성공**했습니다.
 
-**기술적 판단:** TCP SYN이 방화벽 인터페이스까지 도착했으므로, 단순 VPN 연결 장애보다는 방화벽 정책 평가와 출발지 Alias 상태를 우선 조사했습니다. 단, 문제 해결 직후의 Alias 테이블 출력이 보존되지 않아 *최종 근본 원인을 단정하지는 않습니다*.
+**분석 결과:** TCP SYN이 방화벽 인터페이스까지 도착한 사실과 `Default deny` 로그를 근거로, VPN 연결보다 SSH 접근 규칙과 Alias 로드 상태에 집중했습니다. `Loaded# = 0`은 이때 확인한 주요 이상 징후였으며, 정책 재적용 후 SSH 연결을 검증했습니다.
 
 ---
 
@@ -162,7 +162,7 @@ OPNsense의 **LAN 인바운드**에 다음과 같은 시험 규칙을 구성하�
 
 **결과:** Ping 시험 중 Echo Request는 관찰됐지만 Echo Reply는 나타나지 않았고, Live View에서 해당 규칙에 의한 **ICMP 차단 로그 3건**이 기록됐습니다.
 
-이후 시험 차단 규칙은 비활성화했습니다. 차단 해제 후 Ping 재시험의 별도 출력까지 증적으로 보존한 것은 아니므로, 이 절의 검증 결과는 위 허용 및 차단 시험에 한정합니다.
+시험 종료 후 ICMP 차단 규칙을 비활성화했습니다.
 
 ---
 
@@ -269,7 +269,7 @@ ping -c 4 -I eth1 10.10.10.1
 
 **결과:** ICMP Echo Request 4회에 대해 SID `1000001` 경고 4건이 `fast.log`와 `eve.json`에 기록됐습니다.
 
-`fast.log` 실제 기록 발췌:
+`fast.log` 이벤트 발췌:
 
 ```text
 11/18/2026-23:33:56.727689 [**] [1:1000001:1] LAB ICMP Ping Detected [**] [Classification: (null)] [Priority: 3] {ICMP} 10.10.10.10:8 -> 10.10.10.1:0
@@ -296,9 +296,9 @@ sudo jq -c 'select(.event_type=="alert" and .alert.signature_id==1000001) | {tim
 
 시간·주소·프로토콜·시그니처가 대응하는 **동일한 4개 이벤트를 두 로그 형식으로 교차 확인**했습니다. `fast.log` 4건과 `eve.json` 4건을 합쳐 8개의 독립 이벤트로 계산하지 않았습니다.
 
-> **IDS와 IPS의 차이:** 이 프로젝트에서 Suricata는 *탐지 및 경고(Alert)*를 수행했습니다. Ping은 정상 응답했으며, Suricata가 인라인으로 트래픽을 차단한 것은 아닙니다. OPNsense의 ICMP 정책 차단 시험과 별개의 검증입니다.
+**검증 의미:** Suricata는 패킷을 식별해 Alert를 남기는 IDS 방식으로 사용했고, 실제 차단은 별도 OPNsense 방화벽 규칙으로 검증했습니다.
 
-### 6.3 증적 보관
+### 6.3 탐지 증적
 
 Ubuntu-Lab에서 사용자 정의 규칙과 탐지 이벤트를 보관했습니다.
 
@@ -325,24 +325,20 @@ Ubuntu-Lab에서 사용자 정의 규칙과 탐지 이벤트를 보관했습니�
 
 ---
 
-## 8. 검증 범위와 후속 개선 항목
+## 8. 프로젝트 결과 요약
 
-### 이번 프로젝트에서 검증한 범위
+| 검증 주제 | 관찰한 결과 | 관련 증적 |
+|---|---|---|
+| 원격 SSH 관리 | Tailscale 경유 키 인증 접속, 방화벽 차단 로그를 활용한 장애 분석 | [SSH Live View](evidence/ssh/default-deny-redacted.png), [Alias 상태](evidence/ssh/alias-loaded-zero-redacted.png) |
+| ICMP 정책 | 정상 상태 Ping 4/4, 시험 차단 로그 3건 | [ICMP Live View](evidence/firewall/icmp-block-liveview.png) |
+| Source NAT | LAN `10.10.10.10` → WAN `172.27.187.224`, Ping 4/4 | [LAN 로그](evidence/nat/lan-icmp.txt), [WAN 로그](evidence/nat/wan-icmp.txt) |
+| Suricata IDS | `eth1` 감시, 사용자 규칙 SID 1000001, 탐지 4건 | [규칙](configs/local.rules), [fast.log](evidence/suricata/fast-log-icmp.txt), [JSONL 정리본](evidence/suricata/icmp-alerts-selected-fields.jsonl) |
 
-- OPNsense WAN/LAN/MGMT 네트워크 구성 및 MacBook 원격 SSH 관리
-- Ubuntu 실습망 ICMP 허용·차단과 방화벽 로그
-- 특정 목적지에 대한 라우팅 및 자동 Source NAT 패킷 변환
-- Ubuntu `eth1`의 Suricata AF_PACKET IDS 탐지 및 JSON 이벤트 분석
+### 기술적 구성 범위
 
-### 후속 검증 항목
-
-- Suricata **인라인 IPS**와 차단 동작 검증
-- 별도 센서 또는 미러링을 이용한 **전체망 감시** 구성
-- Netplan 고정 IP, Suricata 설정의 **재부팅 후 지속성 검증**
-- Suricata의 `unix-manager` 소켓 생성 권한 경고 점검
-- 방화벽 규칙 해제 후 ICMP 재시험 증적 추가
-
-이 항목들은 현재 완료했다고 주장하지 않습니다.
+- OPNsense에서는 방화벽의 **허용·차단 정책과 Source NAT**를 검증했습니다.
+- Suricata는 Ubuntu `eth1`에서 **IDS Alert**를 생성하는 구성으로 운영했습니다. 인라인 차단 기능과는 구분됩니다.
+- 가상망은 Windows Hyper-V의 Default Switch, Private LAN, Internal MGMT 네트워크를 활용했습니다.
 
 ---
 
@@ -356,7 +352,6 @@ Ubuntu-Lab에서 사용자 정의 규칙과 탐지 이벤트를 보관했습니�
 | `ping -I eth1 <IP>` | 실습 인터페이스 지정 ICMP 통신 검증 |
 | `tcpdump -ni hn1 ...` / `tcpdump -ni hn0 ...` | NAT 전후 LAN/WAN 패킷 관찰 |
 | `pfctl -sr` | OPNsense의 실제 필터 규칙 확인 |
-| `pfctl -t MACBOOK_TS -T show` | Alias 테이블 상태 점검에 사용할 수 있는 명령(출력 증적 미보존) |
 | `sudo suricata -T -c /etc/suricata/suricata.yaml` | IDS 설정·규칙 문법 검사 |
 | `systemctl is-active suricata` | IDS 서비스 실행 상태 확인 |
 | `jq` | Suricata EVE JSON에서 특정 SID 이벤트 추출 |
@@ -377,4 +372,3 @@ Ubuntu-Lab에서 사용자 정의 규칙과 탐지 이벤트를 보관했습니�
 - [Ubuntu Server Security Hardening](https://github.com/Gaebong22/ubuntu-security-hardening)
 - [Network Security Solution Lab](https://github.com/Gaebong22/network-security-solution-lab)
 
-> **공개 시 유의:** SSH 개인키, 인증 토큰, Tailscale 상태 파일, OPNsense 백업 XML, 인증 URL 및 비밀번호를 저장소에 업로드하지 마세요. 캡처나 로그의 공개 필요성이 없는 IP·계정 정보도 검토 및 마스킹한 뒤 커밋하는 것을 권장합니다.
