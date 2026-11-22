@@ -1,0 +1,1 @@
+alert icmp 10.10.10.10 any -> 10.10.10.1 any (msg:"LAB ICMP Ping Detected"; itype:8; sid:1000001; rev:1;)

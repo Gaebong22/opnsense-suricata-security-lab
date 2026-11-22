@@ -1,0 +1,10 @@
+# 원격 실습 중 공유한 OPNsense hn1 tcpdump 실제 출력 발췌
+# tcpdump -ni hn1 'icmp and host 1.1.1.1'
+14:19:05.830561 IP 10.10.10.10 > 1.1.1.1: ICMP echo request, id 17179, seq 1, length 64
+14:19:05.834626 IP 1.1.1.1 > 10.10.10.10: ICMP echo reply, id 17179, seq 1, length 64
+14:19:06.831784 IP 10.10.10.10 > 1.1.1.1: ICMP echo request, id 17179, seq 2, length 64
+14:19:06.834976 IP 1.1.1.1 > 10.10.10.10: ICMP echo reply, id 17179, seq 2, length 64
+14:19:07.832987 IP 10.10.10.10 > 1.1.1.1: ICMP echo request, id 17179, seq 3, length 64
+14:19:07.838515 IP 1.1.1.1 > 10.10.10.10: ICMP echo reply, id 17179, seq 3, length 64
+14:19:08.835014 IP 10.10.10.10 > 1.1.1.1: ICMP echo request, id 17179, seq 4, length 64
+14:19:08.842043 IP 1.1.1.1 > 10.10.10.10: ICMP echo reply, id 17179, seq 4, length 64

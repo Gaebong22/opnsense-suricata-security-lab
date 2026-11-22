@@ -1,0 +1,9 @@
+# 실습 설정을 바탕으로 재작성한 eth1 설정 예시 (실제 cloud-init 전체 원본 아님)
+network:
+  version: 2
+  ethernets:
+    eth1:
+      dhcp4: false
+      addresses:
+        - 10.10.10.10/24
+      optional: true

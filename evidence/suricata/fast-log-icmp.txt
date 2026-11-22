@@ -1,0 +1,5 @@
+# 원격 실습 중 공유된 fast.log 이벤트 4건 발췌
+11/18/2026-23:33:56.727689  [**] [1:1000001:1] LAB ICMP Ping Detected [**] [Classification: (null)] [Priority: 3] {ICMP} 10.10.10.10:8 -> 10.10.10.1:0
+11/18/2026-23:33:57.729027  [**] [1:1000001:1] LAB ICMP Ping Detected [**] [Classification: (null)] [Priority: 3] {ICMP} 10.10.10.10:8 -> 10.10.10.1:0
+11/18/2026-23:33:58.755606  [**] [1:1000001:1] LAB ICMP Ping Detected [**] [Classification: (null)] [Priority: 3] {ICMP} 10.10.10.10:8 -> 10.10.10.1:0
+11/18/2026-23:33:59.756466  [**] [1:1000001:1] LAB ICMP Ping Detected [**] [Classification: (null)] [Priority: 3] {ICMP} 10.10.10.10:8 -> 10.10.10.1:0
